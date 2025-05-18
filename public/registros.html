@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Registros de Diagnósticos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<header>
+  <div id="header-container"></div>
+</header>
+<body>
+  <main>
+    <h1>Registros Salvos</h1>
+    <table border="1" id="tabela">
+      <thead>
+        <tr>
+          <th>ID</th><th>Nome</th><th>Diagnóstico</th><th>Precisão</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="modal">
+      <div id="modal-content">
+        <span id="modal-close">&times;</span>
+        <div id="modal-body"></div>
+        <div class="modal-actions">
+          <button id="modal-editar">Editar</button>
+          <button id="modal-excluir">Excluir</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    fetch('_header.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('header-container').innerHTML = html;
+      });
+    let registros = [];
+    let registroAtual = null;
+
+    async function carregarRegistros() {
+      const res = await fetch('/diagnosticos');
+      registros = await res.json();
+      const tbody = document.querySelector('#tabela tbody');
+      tbody.innerHTML = '';
+
+      registros.forEach(d => {
+        const linha = document.createElement('tr');
+
+        const labelMap = {
+          '0=Blood Donor': 'Blood Donor',
+          '0s=suspect Blood Donor': 'Suspect Blood Donor',
+          '1=Hepatitis': 'Hepatitis',
+          '2=Fibrosis': 'Fibrosis',
+          '3=Cirrhosis': 'Cirrhosis'
+        };
+        let diag = d.diagnostico;
+        if (labelMap[diag]) diag = labelMap[diag];
+        linha.innerHTML = `
+          <td>${d.id}</td>
+          <td>${d.Name || ''}</td>
+          <td>${diag}</td>
+          <td>${(d.precisao * 100).toFixed(2)}%</td>
+          <td>
+            <button onclick="abrirModal(${d.id})">Visualizar</button>
+          </td>
+        `;
+        tbody.appendChild(linha);
+      });
+    }
+
+    function abrirModal(id) {
+      registroAtual = registros.find(r => r.id === id);
+      if (!registroAtual) return;
+      const labelMap = {
+        '0=Blood Donor': 'Blood Donor',
+        '0s=suspect Blood Donor': 'Suspect Blood Donor',
+        '1=Hepatitis': 'Hepatitis',
+        '2=Fibrosis': 'Fibrosis',
+        '3=Cirrhosis': 'Cirrhosis'
+      };
+      const body = document.getElementById('modal-body');
+      body.innerHTML = Object.entries(registroAtual).map(([k,v]) => {
+        if (k === 'diagnostico' && labelMap[v]) {
+          return `<div><b>${k}:</b> <span id="modal-campo-${k}">${labelMap[v]}</span></div>`;
+        }
+        return `<div><b>${k}:</b> <span id="modal-campo-${k}">${v}</span></div>`;
+      }).join('');
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    document.getElementById('modal-close').onclick = function() {
+      document.getElementById('modal').style.display = 'none';
+    };
+
+    document.getElementById('modal-editar').onclick = async function() {
+      if (!registroAtual) return;
+
+      for (const k in registroAtual) {
+        if (k === 'id') continue;
+        const span = document.getElementById('modal-campo-' + k);
+        span.contentEditable = true;
+        span.style.background = '#eef';
+      }
+      this.textContent = 'Salvar';
+      this.onclick = async function() {
+        const novo = { ...registroAtual };
+        for (const k in novo) {
+          if (k === 'id') continue;
+          const span = document.getElementById('modal-campo-' + k);
+          novo[k] = span.innerText;
+        }
+
+        if (novo.precisao) novo.precisao = parseFloat(novo.precisao.replace('%',''))/100;
+        await fetch(`/diagnosticos/${registroAtual.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(novo)
+        });
+        alert('Registro atualizado!');
+        document.getElementById('modal').style.display = 'none';
+        carregarRegistros();
+        this.textContent = 'Editar';
+        this.onclick = arguments.callee;
+      };
+    };
+
+    document.getElementById('modal-excluir').onclick = async function() {
+      if (!registroAtual) return;
+      if (!confirm('Tem certeza que deseja excluir?')) return;
+      await fetch(`/diagnosticos/${registroAtual.id}`, { method: 'DELETE' });
+      alert('Registro excluído!');
+      document.getElementById('modal').style.display = 'none';
+      carregarRegistros();
+    };
+
+    window.onclick = function(event) {
+      if (event.target == document.getElementById('modal')) {
+        document.getElementById('modal').style.display = 'none';
+      }
+    };
+    carregarRegistros();
+  </script>
+</body>
+</html>

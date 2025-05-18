@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1747586877173,
+    "Name": "Allan",
+    "Age": "21",
+    "Sex": "m",
+    "ALB": "78",
+    "ALP": "54",
+    "ALT": "90",
+    "AST": "76",
+    "BIL": "45",
+    "CHE": "90",
+    "CHOL": "67",
+    "CREA": "45",
+    "GGT": "43",
+    "PROT": "59",
+    "diagnostico": "0=Blood Donor",
+    "precisao": 0.8
+  }
+]

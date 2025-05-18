@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Diagnóstico Hepático</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<header>
+  <div id="header-container"></div>
+</header>
+<body>
+  <main>
+    <h1>Registro de Paciente</h1>
+    <form id="form">
+      <input type="text" name="Name" placeholder="Nome" required>
+      <input type="number" name="Age" placeholder="Idade" required>
+      <select name="Sex">
+        <option value="m">Masculino</option>
+        <option value="f">Feminino</option>
+      </select>
+      <input type="number" step="0.01" name="ALB" placeholder="ALB">
+      <input type="number" step="0.01" name="ALP" placeholder="ALP">
+      <input type="number" step="0.01" name="ALT" placeholder="ALT">
+      <input type="number" step="0.01" name="AST" placeholder="AST">
+      <input type="number" step="0.01" name="BIL" placeholder="BIL">
+      <input type="number" step="0.01" name="CHE" placeholder="CHE">
+      <input type="number" step="0.01" name="CHOL" placeholder="CHOL">
+      <input type="number" step="0.01" name="CREA" placeholder="CREA">
+      <input type="number" step="0.01" name="GGT" placeholder="GGT">
+      <input type="number" step="0.01" name="PROT" placeholder="PROT">
+      <button type="submit">Diagnosticar</button>
+    </form>
+
+    <div id="resultado"></div>
+    <h1></h1>
+    <button id="salvarRegistroBtn" style="display: none;">Salvar Registro</button>
+  </main>
+
+  <script>
+    fetch('_header.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('header-container').innerHTML = html;
+      });
+
+    let ultimoDiagnostico = null;
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form).entries());
+
+      try {
+        const res = await fetch('/diagnose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const json = await res.json();
+
+        const labelMap = {
+          '0=Blood Donor': 'Blood Donor',
+          '0s=suspect Blood Donor': 'Suspect Blood Donor',
+          '1=Hepatitis': 'Hepatitis',
+          '2=Fibrosis': 'Fibrosis',
+          '3=Cirrhosis': 'Cirrhosis'
+        };
+        const labelAmigavel = labelMap[json.label] || labelMap[json.diagnostico] || json.label;
+
+        document.getElementById('resultado').innerHTML = `
+          <h3>Diagnóstico: ${labelAmigavel}</h3>
+          <p>Precisão: ${(json.accuracy * 100).toFixed(2)}%</p>
+        `;
+
+        ultimoDiagnostico = {
+          ...data,
+          diagnostico: json.label,
+          precisao: json.accuracy
+        };
+
+        document.getElementById('salvarRegistroBtn').style.display = 'inline-block';
+
+      } catch (err) {
+        alert("Erro no diagnóstico: " + err.message);
+      }
+    });
+
+    document.getElementById('salvarRegistroBtn').addEventListener('click', async () => {
+      if (!ultimoDiagnostico) return;
+
+      try {
+        await fetch('/diagnosticos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ultimoDiagnostico)
+        });
+        alert('Registro salvo com sucesso!');
+        document.getElementById('salvarRegistroBtn').style.display = 'none';
+      } catch (err) {
+        alert("Erro ao salvar registro: " + err.message);
+      }
+    });
+</script>
+</body>
+</html>
