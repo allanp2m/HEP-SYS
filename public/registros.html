@@ -98,29 +98,34 @@
 
     document.getElementById('modal-editar').onclick = async function() {
       if (!registroAtual) return;
-
+      // Torna campos editáveis
       for (const k in registroAtual) {
         if (k === 'id') continue;
         const span = document.getElementById('modal-campo-' + k);
         span.contentEditable = true;
-        span.style.background = '#eef';
+        span.style.background = '#232837'; // fundo escuro
+        span.style.color = '#4fd1c5'; // texto ciano
+        span.style.border = '1px solid #4fd1c5';
+        span.style.padding = '2px 4px';
+        span.style.borderRadius = '4px';
       }
       this.textContent = 'Salvar';
       this.onclick = async function() {
+        // Salvar alterações
         const novo = { ...registroAtual };
         for (const k in novo) {
           if (k === 'id') continue;
           const span = document.getElementById('modal-campo-' + k);
           novo[k] = span.innerText;
         }
-
+        // Conversão de precisão se necessário
         if (novo.precisao) novo.precisao = parseFloat(novo.precisao.replace('%',''))/100;
         await fetch(`/diagnosticos/${registroAtual.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(novo)
         });
-        alert('Registro atualizado!');
+        mostrarConfirmacao('Registro atualizado com sucesso!');
         document.getElementById('modal').style.display = 'none';
         carregarRegistros();
         this.textContent = 'Editar';
@@ -128,14 +133,23 @@
       };
     };
 
+    // Excluir registro no modal
     document.getElementById('modal-excluir').onclick = async function() {
       if (!registroAtual) return;
       if (!confirm('Tem certeza que deseja excluir?')) return;
       await fetch(`/diagnosticos/${registroAtual.id}`, { method: 'DELETE' });
-      alert('Registro excluído!');
+      mostrarConfirmacao('Registro excluído com sucesso!');
       document.getElementById('modal').style.display = 'none';
       carregarRegistros();
     };
+
+    // Função para mostrar confirmação
+    function mostrarConfirmacao(msg) {
+      let conf = document.createElement('div');
+      conf.innerHTML = `<div style="position:fixed;top:30px;left:50%;transform:translateX(-50%);background:#232837;color:#4fd1c5;padding:18px 32px;border-radius:8px;box-shadow:0 2px 16px #0008;font-size:1.2em;z-index:9999;">${msg}</div>`;
+      document.body.appendChild(conf);
+      setTimeout(() => conf.remove(), 2200);
+    }
 
     window.onclick = function(event) {
       if (event.target == document.getElementById('modal')) {

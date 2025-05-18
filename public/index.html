@@ -95,12 +95,20 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(ultimoDiagnostico)
         });
-        alert('Registro salvo com sucesso!');
+        mostrarConfirmacao('Registro salvo com sucesso!');
         document.getElementById('salvarRegistroBtn').style.display = 'none';
       } catch (err) {
         alert("Erro ao salvar registro: " + err.message);
       }
     });
+
+    // Função para mostrar confirmação
+    function mostrarConfirmacao(msg) {
+      let conf = document.createElement('div');
+      conf.innerHTML = `<div style="position:fixed;top:30px;left:50%;transform:translateX(-50%);background:#232837;color:#4fd1c5;padding:18px 32px;border-radius:8px;box-shadow:0 2px 16px #0008;font-size:1.2em;z-index:9999;">${msg}</div>`;
+      document.body.appendChild(conf);
+      setTimeout(() => conf.remove(), 2200);
+    }
 </script>
 </body>
 </html>
